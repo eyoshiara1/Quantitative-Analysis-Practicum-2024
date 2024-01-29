@@ -51,3 +51,54 @@ df_mining <- data.frame(
   mining$Extent.of.Processing,
   mining$Project.Inception..Year.,
   mining$Mine.Location)
+
+
+# Install and load required packages
+install.packages(c("leaflet", "leaflet.extras"))
+library(leaflet)
+library(leaflet.extras)
+install.packages("rnaturalearth")
+library(rnaturalearth)
+library(sf)
+
+# Sample data (replace this with your actual dataset)
+mineral_data <- data.frame(
+  latitude = c(0, 30, -20, 40, -50),
+  longitude = c(0, 60, -40, -100, 150)
+)
+
+# Create a leaflet map
+map <- leaflet() %>%
+  setView(lng = 0, lat = 0, zoom = 2)  # Set initial view to the world
+
+# Remove rows with missing coordinates
+deposit <- deposit[complete.cases(deposit), ]
+
+# Assign a CRS to mineral_data (WGS84)
+deposit_sf <- st_as_sf(deposit, coords = c("longitude", "latitude"), crs = 4326)
+
+# Add country borders to the map
+countries <- ne_countries(scale = "medium", returnclass = "sf")
+countries <- st_transform(countries, crs = st_crs(deposit_sf))  # Transform to the same CRS as mineral_data_sf
+map <- addPolygons(
+  map,
+  data = countries,
+  color = "gray",  # Border color
+  weight = 1,      # Border weight
+  fillOpacity = 0  # No fill for country borders
+)
+
+# Add circles to the map
+for (i in seq(nrow(deposit_sf))) {
+  map <- addCircles(
+    map,
+    data = deposit_sf[i, , drop = FALSE],
+    radius = 500,  # Adjust the radius as needed
+    color = "blue",  # Set a single color for all circles
+    fill = TRUE,
+    fillOpacity = 0.2
+  )
+}
+
+# Display the map
+map
